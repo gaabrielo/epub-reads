@@ -26,7 +26,8 @@ export default {
 				foreground: 'hsl(var(--foreground))',
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
-					foreground: 'hsl(var(--primary-foreground))'
+					foreground: 'hsl(var(--primary-foreground))',
+					glow: 'hsl(var(--primary-glow))'
 				},
 				secondary: {
 					DEFAULT: 'hsl(var(--secondary))',
@@ -61,7 +62,27 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				reader: {
+					sepia: 'hsl(var(--reader-sepia))',
+					'sepia-text': 'hsl(var(--reader-sepia-text))',
+					dark: 'hsl(var(--reader-dark))',
+					'dark-text': 'hsl(var(--reader-dark-text))',
+					light: 'hsl(var(--reader-light))',
+					'light-text': 'hsl(var(--reader-light-text))'
 				}
+			},
+			backgroundImage: {
+				'gradient-warm': 'var(--gradient-warm)',
+				'gradient-subtle': 'var(--gradient-subtle)'
+			},
+			boxShadow: {
+				'reading': 'var(--shadow-reading)',
+				'control': 'var(--shadow-control)'
+			},
+			fontFamily: {
+				'reading': 'var(--font-reading)',
+				'ui': 'var(--font-ui)'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
