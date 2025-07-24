@@ -48,15 +48,24 @@ All colors MUST be HSL.
     --ring: 25 85% 45%;
 
     /* Gradients for beautiful UI */
-    --gradient-warm: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
-    --gradient-subtle: linear-gradient(180deg, hsl(var(--background)), hsl(var(--muted)));
-    
+    --gradient-warm: linear-gradient(
+      135deg,
+      hsl(var(--primary)),
+      hsl(var(--primary-glow))
+    );
+    --gradient-subtle: linear-gradient(
+      180deg,
+      hsl(var(--background)),
+      hsl(var(--muted))
+    );
+
     /* Reading comfort shadows */
     --shadow-reading: 0 4px 20px -4px hsl(var(--primary) / 0.1);
     --shadow-control: 0 2px 10px -2px hsl(var(--foreground) / 0.1);
 
     /* Typography for reading */
-    --font-reading: 'Georgia', 'Times New Roman', serif;
+    --font-reading: 'Georgia', 'Times New Roman', 'Arial', 'Pangolin',
+      sans-serif, cursive, serif;
     --font-ui: 'Inter', -apple-system, system-ui, sans-serif;
 
     --radius: 0.75rem;
@@ -130,6 +139,8 @@ All colors MUST be HSL.
   /* Custom reading styles */
   .reader-content {
     font-family: var(--font-reading);
+    font-weight: 400;
+    font-style: normal;
     line-height: 1.6;
     color: hsl(var(--reader-light-text));
     background: hsl(var(--reader-light));
