@@ -1,10 +1,9 @@
 import { useEffect, useState, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
 import ePub, { Book, Rendition } from 'epubjs';
-import { getBook, StoredBook } from '../db';
-import { ReaderControls, ReaderSettings, ReaderTheme } from './ReaderControls';
+import { StoredBook } from '../db';
+import { ReaderControls, ReaderSettings } from './ReaderControls';
 import { Button } from '@/components/ui/button';
-import { ChevronLeftIcon, MoveLeftIcon, MoveRightIcon } from 'lucide-react';
+import { MoveLeftIcon, MoveRightIcon } from 'lucide-react';
 
 const defaultSettings: ReaderSettings = {
   theme: 'light',
@@ -13,22 +12,17 @@ const defaultSettings: ReaderSettings = {
   fontFamily: 'Georgia, serif',
 };
 
-export function EpubViewer() {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const [book, setBook] = useState<StoredBook | null>(null);
+export function EpubViewer({ book }: { book: StoredBook }) {
   const [arrayBuffer, setArrayBuffer] = useState<ArrayBuffer | null>(null);
   const [location, setLocation] = useState<string | null>(null);
-
   const viewerRef = useRef<HTMLDivElement | null>(null);
   const leftBtnRef = useRef<HTMLButtonElement | null>(null);
   const rightBtnRef = useRef<HTMLButtonElement | null>(null);
-
   const [rendition, setRendition] = useState<Rendition | null>(null);
-  // const [epubBook, setEpubBook] = useState<Book | null>(null);
+  const [epubBook, setEpubBook] = useState<Book | null>(null);
   const [settings, setSettings] = useState<ReaderSettings>(defaultSettings);
 
-  // 4) Navegação por teclado + animação nos botões
+  // Navegação por teclado + animação nos botões
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!rendition) return;
@@ -62,19 +56,15 @@ export function EpubViewer() {
     };
   }, [rendition]);
 
-  // 1) Carrega o StoredBook do IndexedDB e lê como ArrayBuffer
+  // Lê o arquivo do StoredBook como ArrayBuffer
   useEffect(() => {
-    if (!id) return navigate('/');
-    getBook(id).then((b) => {
-      if (!b) return navigate('/');
-      setBook(b);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setArrayBuffer(e.target?.result as ArrayBuffer);
-      };
-      reader.readAsArrayBuffer(b.file);
-    });
-  }, [id, navigate]);
+    if (!book) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setArrayBuffer(e.target?.result as ArrayBuffer);
+    };
+    reader.readAsArrayBuffer(book.file);
+  }, [book]);
 
   // 2) Instancia o epub.js e renderiza o livro
   useEffect(() => {
@@ -100,20 +90,14 @@ export function EpubViewer() {
     // Tema
     let bg = '#fff',
       color = '#000';
-    if (settings.theme === 'sepia') {
-      bg = '#fef6e1';
-      color = '#704214';
-    } else if (settings.theme === 'dark') {
-      bg = '#18181b';
-      color = '#f4f4f5';
+    if (settings.theme === 'dark') {
+      bg = '#000';
+      color = '#fff';
     }
-    rendition.themes.register('custom', {
+    rendition.themes.default({
       body: {
-        background: bg,
-        color,
-        'font-family': settings.fontFamily,
-        'font-size': `${settings.fontSize}px`,
-        'line-height': settings.lineHeight,
+        'background-color': bg,
+        color: color,
         margin: 0,
         padding: 0,
       },
@@ -121,6 +105,8 @@ export function EpubViewer() {
         'font-family': settings.fontFamily,
         'font-size': `${settings.fontSize}px`,
         'line-height': settings.lineHeight,
+        margin: 0,
+        padding: 0,
       },
     });
     rendition.themes.select('custom');
