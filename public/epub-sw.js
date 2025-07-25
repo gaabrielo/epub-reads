@@ -1,4 +1,13 @@
 // Service Worker para servir arquivos EPUB do IndexedDB
+// ativa logo após o install
+self.addEventListener('install', (ev) => {
+  ev.waitUntil(self.skipWaiting());
+});
+
+// assume o controle das pages imediatamente
+self.addEventListener('activate', (ev) => {
+  ev.waitUntil(self.clients.claim());
+});
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
