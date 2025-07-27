@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
-import ePub, { Book, Rendition } from 'epubjs';
-import { StoredBook } from '../db';
+import ePub, { Book, Location, Rendition } from 'epubjs';
+import { StoredBook, getUserPreferences, updateBookLocation } from '../db';
 import { ReaderControls, ReaderSettings } from './ReaderControls';
 import { Button } from '@/components/ui/button';
 import { MoveLeftIcon, MoveRightIcon } from 'lucide-react';
@@ -19,42 +19,19 @@ export function EpubViewer({ book }: { book: StoredBook }) {
   const leftBtnRef = useRef<HTMLButtonElement | null>(null);
   const rightBtnRef = useRef<HTMLButtonElement | null>(null);
   const [rendition, setRendition] = useState<Rendition | null>(null);
-  const [epubBook, setEpubBook] = useState<Book | null>(null);
   const [settings, setSettings] = useState<ReaderSettings>(defaultSettings);
+  const [totalPages, setTotalPages] = useState<number>(0);
 
-  // Navegação por teclado + animação nos botões
+  // Carrega preferências salvas do usuário ao montar
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!rendition) return;
-      if (e.key === 'ArrowLeft') {
-        rendition.prev();
-        if (leftBtnRef.current) {
-          leftBtnRef.current.classList.add('scale-90');
-          setTimeout(
-            () =>
-              leftBtnRef.current &&
-              leftBtnRef.current.classList.remove('scale-90'),
-            150
-          );
-        }
-      } else if (e.key === 'ArrowRight') {
-        rendition.next();
-        if (rightBtnRef.current) {
-          rightBtnRef.current.classList.add('scale-90');
-          setTimeout(
-            () =>
-              rightBtnRef.current &&
-              rightBtnRef.current.classList.remove('scale-90'),
-            150
-          );
-        }
+    (async () => {
+      const prefs = await getUserPreferences();
+      if (prefs) {
+        // Só atualiza se houver alguma preferência relevante
+        setSettings((prev) => ({ ...prev, ...prefs }));
       }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [rendition]);
+    })();
+  }, []);
 
   // Lê o arquivo do StoredBook como ArrayBuffer
   useEffect(() => {
@@ -69,20 +46,27 @@ export function EpubViewer({ book }: { book: StoredBook }) {
   // 2) Instancia o epub.js e renderiza o livro
   useEffect(() => {
     if (!arrayBuffer || !viewerRef.current) return;
-    const book = ePub(arrayBuffer);
-    // setEpubBook(book);
-    const rendition = book.renderTo(viewerRef.current, {
+    const epubInstance = ePub(arrayBuffer);
+    const rend = epubInstance.renderTo(viewerRef.current, {
       width: '100%',
       height: '100%',
     });
-    setRendition(rendition);
-    rendition.display();
+    setRendition(rend);
+    epubInstance.ready.then(() => {
+      // aqui 1000 é um parâmetro de “chunk” em caracteres
+      // você pode ajustar para ter mais páginas menores/grandes
+      epubInstance.locations.generate(1000);
+      setTotalPages(epubInstance.locations.length());
+      // se já tiver uma última posição salva, vai pra ela
+      if (book.lastLocation) rend.display(book.lastLocation);
+      else rend.display();
+    });
+
     return () => {
-      rendition.destroy();
-      book.destroy();
+      rend.destroy();
+      epubInstance.destroy();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [arrayBuffer]);
+  }, [arrayBuffer, book.lastLocation]);
 
   // 2.1) Aplica estilos do ReaderControls ao epub.js
   useEffect(() => {
@@ -115,11 +99,56 @@ export function EpubViewer({ book }: { book: StoredBook }) {
   // 3) Quando o rendition ficar pronto, hook de relocated
   useEffect(() => {
     if (!rendition) return;
-    rendition.on('relocated', (loc) => {
+    const handleRelocated = (loc: Location) => {
+      const cfi = loc.start.cfi as string;
       setLocation(loc.start.cfi);
-    });
+
+      const idx = rendition.book.locations.locationFromCfi(cfi);
+      console.log('Current page index:', idx);
+      // setCurrentPage(idx+1)
+
+      // Salva a página atual no IndexedDB
+      if (book?.id && loc?.start?.cfi) {
+        updateBookLocation(book.id, loc.start.cfi);
+      }
+    };
+    rendition.on('relocated', handleRelocated);
     return () => {
-      rendition.off('relocated', () => {});
+      rendition.off('relocated', handleRelocated);
+    };
+  }, [rendition, book]);
+
+  // Navegação por teclado + animação nos botões
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!rendition) return;
+      if (e.key === 'ArrowLeft') {
+        rendition.prev();
+        if (leftBtnRef.current) {
+          leftBtnRef.current.classList.add('scale-90');
+          setTimeout(
+            () =>
+              leftBtnRef.current &&
+              leftBtnRef.current.classList.remove('scale-90'),
+            150
+          );
+        }
+      } else if (e.key === 'ArrowRight') {
+        rendition.next();
+        if (rightBtnRef.current) {
+          rightBtnRef.current.classList.add('scale-90');
+          setTimeout(
+            () =>
+              rightBtnRef.current &&
+              rightBtnRef.current.classList.remove('scale-90'),
+            150
+          );
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
     };
   }, [rendition]);
 
@@ -156,6 +185,12 @@ export function EpubViewer({ book }: { book: StoredBook }) {
         >
           <MoveLeftIcon className="w-4 h-4" />
         </Button>
+
+        {/* Página atual como número natural */}
+        {/* <span className="px-4 py-2 text-xs rounded bg-muted text-muted-foreground font-mono select-all">
+          {totalPages > 0 ? ` / ${totalPages}` : 'error'}
+        </span> */}
+
         <Button
           ref={rightBtnRef}
           variant="secondary"

@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import { saveUserPreferences } from '@/db';
 
 export type ReaderTheme = 'light' | 'sepia' | 'dark';
 
@@ -69,6 +70,7 @@ export const ReaderControls = ({ settings, onChange }: ReaderControlsProps) => {
     value: ReaderSettings[K]
   ) => {
     onChange({ ...settings, [key]: value });
+    saveUserPreferences({ [key]: value });
   };
 
   return (
