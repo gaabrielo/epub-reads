@@ -7,12 +7,8 @@ import {
   UserPreferences,
 } from '../db';
 import { FileUpload } from '@/components/FileUpload';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import Logo from '/logo.png';
 import Epub, { Book } from 'epubjs';
-import { Link } from '@tanstack/react-router';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Library } from '@/components/Library';
 
 async function getCover(file: File): Promise<string> {

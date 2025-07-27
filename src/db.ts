@@ -128,3 +128,39 @@ export async function getUserPreferences(): Promise<
     req.onerror = () => reject(req.error);
   });
 }
+
+export const defaultSettings: Omit<UserPreferences, 'id'> = {
+  theme: 'light',
+  fontSize: 16,
+  lineHeight: 1.5,
+  fontFamily: 'Georgia, serif',
+  showBookCover: true,
+};
+
+export async function seedInitialData(): Promise<void> {
+  // 1) Se não há livros, popula com o default.epub
+  const existing = await getAllBooks();
+  if (existing.length === 0) {
+    // Faz fetch do EPUB padrão
+    const resp = await fetch('/default.epub');
+    if (!resp.ok) {
+      console.warn('/default.epub was not found, fatal error');
+    } else {
+      const blob = await resp.blob();
+      // Cria um File para que addBook funcione igual ao upload do usuário
+      const file = new File(
+        [blob],
+        "Alice's Adventures in Wonderland by Lewis Carroll.epub",
+        { type: blob.type }
+      );
+      await addBook(file);
+    }
+  }
+
+  // 2) Se não há prefs, salva as defaultSettings
+  const prefs = await getUserPreferences();
+  if (!prefs) {
+    await saveUserPreferences(defaultSettings);
+    console.log('Default user preferences saved');
+  }
+}
